@@ -44,7 +44,7 @@
   * 
  */
 
-
+// QP-MOD
 #define PLUGIN_VERSION	"1.4.7.1"
 
 #include <sourcemod>
@@ -67,6 +67,9 @@ new Handle:g_Cvar_ExcludeCurrent = INVALID_HANDLE;
 new Handle:g_MapList = INVALID_HANDLE;
 new Handle:g_MapMenu = INVALID_HANDLE;
 new g_mapFileSerial = -1;
+
+// QP-MOD
+new g_lastMapNumPlayers = -1;
 
 #define MAPSTATUS_ENABLED (1<<0)
 #define MAPSTATUS_DISABLED (1<<1)
@@ -95,20 +98,72 @@ public OnPluginStart()
 	RegAdminCmd("sm_nominate_addmap", Command_Addmap, ADMFLAG_CHANGEMAP, "sm_nominate_addmap <mapname> - Forces a map to be on the next mapvote.");
 	
 	g_mapTrie = CreateTrie();
+	
+// QP-MOD
+	HookEvent("teamplay_game_over", Hook_GameOver); 
+
 }
+
+
+// QP-MOD
+// Game over event
+public Action:Hook_GameOver(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	g_lastMapNumPlayers = GetRealClientCount ();
+	
+	PrintToServer("[nominations-qp.smx] Notify: Game Over, %d clients counted.", g_lastMapNumPlayers);
+	return Plugin_Continue;
+}
+
+
+// QP-MOD
+stock GetRealClientCount( bool:inGameOnly = true )
+{
+	new clients = 0;
+	
+	for( new i = 1; i <= GetMaxClients(); i++ ) 
+	{
+		if( ( ( inGameOnly ) ? IsClientInGame( i ) : IsClientConnected( i ) ) && !IsFakeClient( i ) ) 
+		{
+			clients++;
+		}
+	}
+	return clients;
+}
+
 
 public OnConfigsExecuted()
 {
-	PrintToServer("[nominations-qp.smx] Configs executed.");
-	if (ReadMapList(g_MapList,
-					g_mapFileSerial,
-					"nominations",
-					MAPLIST_FLAG_CLEARARRAY|MAPLIST_FLAG_MAPSFOLDER)
-		== INVALID_HANDLE)
+	// QP-MOD
+	if (g_lastMapNumPlayers > 15)
 	{
-		if (g_mapFileSerial == -1)
+		PrintToServer("[nominations-qp.smx] Loading normal nominations list.");
+		if (ReadMapList(g_MapList,
+						g_mapFileSerial,
+						"nominations",
+						MAPLIST_FLAG_CLEARARRAY|MAPLIST_FLAG_MAPSFOLDER)
+			== INVALID_HANDLE)
 		{
-			SetFailState("Unable to create a valid map list.");
+			if (g_mapFileSerial == -1)
+			{
+				SetFailState("Unable to create a valid map list.");
+			}
+		}
+	}
+	else
+	{
+		PrintToServer("[nominations-qp.smx] Loading quickplay nominations list.");
+		if (ReadMapList(g_MapList,
+						g_mapFileSerial,
+//						"quickplay",
+						"nominations",
+						MAPLIST_FLAG_CLEARARRAY|MAPLIST_FLAG_MAPSFOLDER)
+			== INVALID_HANDLE)
+		{
+			if (g_mapFileSerial == -1)
+			{
+				SetFailState("Unable to create a valid map list.");
+			}
 		}
 	}
 	
