@@ -45,7 +45,7 @@
  */
 
 // QP-MOD
-#define PLUGIN_VERSION	"1.4.7.3"
+#define PLUGIN_VERSION	"1.4.7.4"
 
 #include <sourcemod>
 #include <mapchooser>
@@ -101,9 +101,21 @@ public OnPluginStart()
 	
 // QP-MOD
 //	HookEvent("teamplay_game_over", Hook_GameOver); 
-//	HookEvent("game_end", Hook_GameOver); 
+	HookEvent("game_end", Hook_GameEnd); 
 	HookEvent("teamplay_win_panel", Hook_GameOver); 
 
+}
+
+
+// QP-MOD
+// Game End event
+public Action:Hook_GameEnd(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	g_lastMapNumPlayers = GetRealClientCount ();
+	
+	PrintToServer("[nominations-qp.smx] Notify: Game End, %d clients counted.", g_lastMapNumPlayers);
+	LogToGame("[nominations-qp.smx] Notify: Game End, %d clients counted.", g_lastMapNumPlayers);
+	return Plugin_Continue;
 }
 
 
@@ -160,8 +172,8 @@ public OnConfigsExecuted()
 		LogToGame("[nominations-qp.smx] Loading quickplay nominations list.");
 		if (ReadMapList(g_MapList,
 						g_mapFileSerial,
-//						"quickplay",
-						"nominations",
+						"quickplay",
+//						"nominations",
 						MAPLIST_FLAG_CLEARARRAY|MAPLIST_FLAG_MAPSFOLDER)
 			== INVALID_HANDLE)
 		{
