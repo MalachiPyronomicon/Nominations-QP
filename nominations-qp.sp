@@ -45,7 +45,7 @@
  */
 
 // QP-MOD
-#define PLUGIN_VERSION	"1.4.7.1"
+#define PLUGIN_VERSION	"1.4.7.3"
 
 #include <sourcemod>
 #include <mapchooser>
@@ -100,7 +100,9 @@ public OnPluginStart()
 	g_mapTrie = CreateTrie();
 	
 // QP-MOD
-	HookEvent("teamplay_game_over", Hook_GameOver); 
+//	HookEvent("teamplay_game_over", Hook_GameOver); 
+//	HookEvent("game_end", Hook_GameOver); 
+	HookEvent("teamplay_win_panel", Hook_GameOver); 
 
 }
 
@@ -111,7 +113,8 @@ public Action:Hook_GameOver(Handle:event, const String:name[], bool:dontBroadcas
 {
 	g_lastMapNumPlayers = GetRealClientCount ();
 	
-	PrintToServer("[nominations-qp.smx] Notify: Game Over, %d clients counted.", g_lastMapNumPlayers);
+	PrintToServer("[nominations-qp.smx] Notify: Win Panel, %d clients counted.", g_lastMapNumPlayers);
+	LogToGame("[nominations-qp.smx] Notify: Win Panel, %d clients counted.", g_lastMapNumPlayers);
 	return Plugin_Continue;
 }
 
@@ -138,6 +141,7 @@ public OnConfigsExecuted()
 	if (g_lastMapNumPlayers > 15)
 	{
 		PrintToServer("[nominations-qp.smx] Loading normal nominations list.");
+		LogToGame("[nominations-qp.smx] Loading normal nominations list.");
 		if (ReadMapList(g_MapList,
 						g_mapFileSerial,
 						"nominations",
@@ -153,6 +157,7 @@ public OnConfigsExecuted()
 	else
 	{
 		PrintToServer("[nominations-qp.smx] Loading quickplay nominations list.");
+		LogToGame("[nominations-qp.smx] Loading quickplay nominations list.");
 		if (ReadMapList(g_MapList,
 						g_mapFileSerial,
 //						"quickplay",
